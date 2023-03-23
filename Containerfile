@@ -21,6 +21,6 @@ RUN mkdir -p /root/spammer/
 
 WORKDIR /root/spammer
 
-COPY --from=builder /root/spammer/memory_spammer ./spammer
+COPY --from=builder /root/spammer/spammer ./spammer
 
 ENTRYPOINT ./spammer

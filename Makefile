@@ -1,5 +1,5 @@
 CC = gcc
-C_FLAGS += -O2
+C_FLAGS += -O2 -lpthread 
 OBJ = memory_spammer.c
 
 all:

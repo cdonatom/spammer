@@ -29,7 +29,7 @@ void* find_primes(void* arg) {
     printf("keep going = %i\nstart = %i\n", data->keep_going, data->start); 
     while(data->keep_going){
       int start = data->start;
-      int end = start + (INT_MAX / sysconf(_SC_NPROCESSORS_ONLN));
+      int end = INT_MAX;
       for (int i = start; i < end; i++) {
         if (is_prime(i)) {
             printf("Thread %i: %d is prime\n", data->index, i);

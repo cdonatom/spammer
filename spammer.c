@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
         pthread_create(&threads[i], NULL, find_primes, (void*)&args[i]);
     }
 
-    for (int i = 0; i < sysconf(_SC_NPROCESSORS_ONLN); i++) {
+    for (int i = 0; i < num_threads; i++) {
         pthread_join(threads[i], NULL);
     }
     free_ram();

@@ -23,4 +23,9 @@ WORKDIR /root/spammer
 
 COPY --from=builder /root/spammer/spammer ./spammer
 
-ENTRYPOINT ./spammer
+ENV MAX_MEM=500
+ENV PER_MEM=100
+ENV NUM_THREADS=4
+ENV LOG_LEVEL=2
+
+ENTRYPOINT ./spammer $MAX_MEM $PER_MEM $NUM_THREADS $LOG_LEVEL

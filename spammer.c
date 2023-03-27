@@ -6,19 +6,30 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <limits.h> 
+#include <stdbool.h>
+#include "log.h"
 
+pthread_mutex_t MUTEX_LOG;
 
 struct thread_args{
     int keep_going;
     int start;
     int index;
 };
-	
+
+void log_lock(bool lock, void* udata) {
+  pthread_mutex_t *LOCK = (pthread_mutex_t*)(udata);
+  if (lock)
+    pthread_mutex_lock(LOCK);
+  else
+    pthread_mutex_unlock(LOCK);
+}
+
 int is_prime(int n) {
     if (n <= 1) return 0;
     if (n <= 3) return 1;
     if (n % 2 == 0 || n % 3 == 0) return 0;
-    for (int i = 5; i * i <= n; i += 6) {
+    for (unsigned long i = 5; i * i <= n; i += 6) {
         if (n % i == 0 || n % (i + 2) == 0) return 0;
     }
     return 1;
@@ -26,15 +37,18 @@ int is_prime(int n) {
 
 void* find_primes(void* arg) {
     struct thread_args* data = (struct thread_args*) arg;
-    printf("keep going = %i\nstart = %i\n", data->keep_going, data->start); 
+    log_info("Thread %i - Starting benchmark",data->index);
+    log_debug("Thread %i: keep going = %i; start = %i", data->index, data->keep_going, data->start); 
     while(data->keep_going){
-      int start = data->start;
-      int end = UINT_MAX;
-      for (int i = start; i < end; i++) {
+      unsigned long start = data->start;
+      unsigned long end = ULONG_MAX;
+      for (unsigned long i = start; i < end; i++) {
+	log_trace("Thread %i: checking %ld", data->index, i);
         if (is_prime(i)) {
-            printf("Thread %i: %d is prime\n", data->index, i);
+            log_trace("Thread %i: %ld is prime", data->index, i);
         }
       }
+      log_trace("Thread %i: start over again!", data->index);
     }
     pthread_exit(NULL);
 }
@@ -50,41 +64,63 @@ size_t free_ram() {
     total_ram /= (1024 * 1024);
     free_ram /= (1024 * 1024);
 
-    printf("Total RAM: %lld MB\n", total_ram);
-    printf("Free RAM: %lld MB\n", free_ram);
+    log_info("Total RAM: %lld MB", total_ram);
+    log_info("Free RAM: %lld MB", free_ram);
 
     return (size_t) info.freeram;
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    size_t mem_size = free_ram();
-    printf("MEMSIZE: %lu\n", mem_size);
-    printf("SIZE OF: void*: %lu bytes\n", sizeof(void*));
-    printf("SIZE OF: char*: %lu bytes\n", sizeof(char*));
-    void *based = malloc(mem_size);  //mem_size = 1024^3
+    size_t mem_size;
+    int num_threads;
+    float per_mem;
+
+    if(argc > 1 && argc < 4){
+      printf("Usage is: %s <max_mem> <percentage_memory> <num_threads> <log_level>", argv[0]);
+      return -1;
+    }
+
+    if (argc == 1){
+       printf("Usage is: %s <max_mem_in_mb> <percentage_memory> <num_threads> <log_level>", argv[0]);
+       mem_size = free_ram();
+       num_threads = sysconf(_SC_NPROCESSORS_ONLN);
+    }
+    else{
+      mem_size = atoi(argv[1]);
+      mem_size *= (1024*1024);
+      per_mem = atoi(argv[2]);
+      mem_size = (size_t) mem_size*(per_mem/100);
+      num_threads = atoi(argv[3]);
+    }
+    log_set_level(atoi(argv[4])); 
+    log_info("MEMSIZE: %lu", mem_size);
+    //This values might change over different archs
+    log_trace("SIZE OF: void*: %lu bytes", sizeof(void*));
+    log_trace("SIZE OF: char*: %lu bytes", sizeof(char*));
+    void *based = malloc(mem_size);
     int stage = 1024;
     int initialized = 0;
     if (based) {
-        printf("Allocated %zu Bytes from %p to %p\n", mem_size, based, based + mem_size);
+        log_info("Allocated %zu Bytes from %p to %p", mem_size, based, based + mem_size);
     } else {
-        printf("Error in allocation.\n");
+        log_error("Error in allocation.");
         return 1;
     }
     int n = 0;
     while (initialized < mem_size) {  //initialize it in batches
-        //printf("%6d %p-%p\n", n, based+initialized, based+initialized+stage);
         n++;
         memset((char *)based + initialized, '$', stage);
         initialized += stage;
     }
-    printf("\n\nMemory allocated and initialized\n");
+    log_info("Memory allocated and initialized");
 
-    struct thread_args args[sysconf(_SC_NPROCESSORS_ONLN)];
-    pthread_t threads[sysconf(_SC_NPROCESSORS_ONLN)];
-
-    for (int i = 0; i < sysconf(_SC_NPROCESSORS_ONLN); i++) {
+    struct thread_args args[num_threads];
+    pthread_t threads[num_threads];
+    pthread_mutex_init(&MUTEX_LOG, NULL);
+    log_set_lock(log_lock, &MUTEX_LOG);
+    for (int i = 0; i < num_threads; i++) {
 	args[i].keep_going = 1;
 	args[i].start = 3;
 	args[i].index = i;

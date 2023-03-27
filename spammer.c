@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     size_t mem_size;
     int num_threads;
     float per_mem;
-
+    int log_lvl = 2;
     if(argc > 1 && argc < 4){
       printf("Usage is: %s <max_mem> <percentage_memory> <num_threads> <log_level>", argv[0]);
       return -1;
@@ -93,8 +93,9 @@ int main(int argc, char *argv[]) {
       per_mem = atoi(argv[2]);
       mem_size = (size_t) mem_size*(per_mem/100);
       num_threads = atoi(argv[3]);
+      log_lvl = atoi(argv[4]);
     }
-    log_set_level(atoi(argv[4])); 
+    log_set_level(log_lvl); 
     log_info("MEMSIZE: %lu", mem_size);
     //This values might change over different archs
     log_trace("SIZE OF: void*: %lu bytes", sizeof(void*));

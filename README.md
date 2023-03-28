@@ -1,6 +1,8 @@
 # spammer
 Small program that fills the available RAM with garbage and creates an many threads as CPU are available in the system to compute all the prime numbers if no params are passed.
 
+![Example of spammer](/docs/example.png)
+
 ## Usage
 If you are using this program from CLI, the usage is as follows if you do not wish to employ all the resources of the target machine:
 `spammer <max_mem> <percentage_memory> <num_threads> <log_level>`

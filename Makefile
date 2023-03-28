@@ -1,6 +1,6 @@
 CC = gcc
 C_FLAGS += -O2 -lpthread 
-OBJ = spammer.c log.c
+OBJ = src/spammer.c src/log.c
 LIB_OPT = -DLOG_USE_COLOR
 
 all:

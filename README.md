@@ -1,5 +1,5 @@
 # spammer
-Small program that fills the available RAM with garbage and creates an many threads as CPU are available in the system to compute all the prime numbers if no params are passed.
+Small program that fills the available RAM with garbage and creates an many threads as CPU cores are available in the system to compute a dummy and infinite task (the prime numbers) if no params are passed.
 
 ![Example of spammer](/docs/example.png)
 

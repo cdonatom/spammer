@@ -1,0 +1,9 @@
+HTTP/1.1 200 OK
+Server: netcat
+Content-Type: text/html; charset=UTF-8
+
+<html>
+<body>
+Hello world!
+</body>
+</html>

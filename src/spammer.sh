@@ -2,7 +2,7 @@
 
 BASEDIR=`dirname $0`
 
-$BASEDIR/spammer $MAX_MEM $PER_MEM $NUM_THREADS $LOG_LEVEL &
+$BASEDIR/spammer $MAX_MEM $PER_MEM $NUM_THREADS $LOG_LEVEL $PER_CPU &
 
 while true
 do

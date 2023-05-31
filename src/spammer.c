@@ -7,14 +7,15 @@
 #include <pthread.h>
 #include <limits.h> 
 #include <stdbool.h>
+#include <time.h>
 #include "log.h"
 
 pthread_mutex_t MUTEX_LOG;
 
 struct thread_args{
     int keep_going;
-    int start;
     int index;
+    useconds_t sleep;
 };
 
 void log_lock(bool lock, void* udata) {
@@ -30,7 +31,7 @@ int is_prime(int n) {
     if (n <= 3) return 1;
     if (n % 2 == 0 || n % 3 == 0) return 0;
     for (unsigned long i = 5; i * i <= n; i += 6) {
-        if (n % i == 0 || n % (i + 2) == 0) return 0;
+	if (n % i == 0 || n % (i + 2) == 0) return 0;
     }
     return 1;
 }
@@ -38,17 +39,22 @@ int is_prime(int n) {
 void* find_primes(void* arg) {
     struct thread_args* data = (struct thread_args*) arg;
     log_info("Thread %i - Starting benchmark",data->index);
-    log_debug("Thread %i: keep going = %i; start = %i", data->index, data->keep_going, data->start); 
+    log_debug("Thread %i: keep going = %i; sleep = %i", data->index, data->keep_going, data->sleep); 
     while(data->keep_going){
-      unsigned long start = data->start;
+      unsigned int seed = time(NULL);
+      log_info("seed = %i", seed);
+      int start = rand_r(&seed);
+      log_debug("Thread %i: start = %i", data->index, start);
       unsigned long end = ULONG_MAX;
       for (unsigned long i = start; i < end; i++) {
 	log_trace("Thread %i: checking %ld", data->index, i);
+        if ( data->index % data->sleep )
+            usleep(1);
         if (is_prime(i)) {
             log_trace("Thread %i: %ld is prime", data->index, i);
         }
       }
-      log_trace("Thread %i: start over again!", data->index);
+      log_info("Thread %i: start over again!", data->index);
     }
     pthread_exit(NULL);
 }
@@ -77,13 +83,14 @@ int main(int argc, char *argv[]) {
     int num_threads;
     float per_mem;
     int log_lvl = 2;
+    useconds_t sleep = 0;
     if(argc > 1 && argc < 4){
-      printf("Usage is: %s <max_mem> <percentage_memory> <num_threads> <log_level>", argv[0]);
+      printf("Usage is: %s <max_mem> <percentage_memory> <num_threads> <log_level> <percentage_cpu>", argv[0]);
       return -1;
     }
 
     if (argc == 1){
-       printf("Usage is: %s <max_mem_in_mb> <percentage_memory> <num_threads> <log_level>", argv[0]);
+       printf("Usage is: %s <max_mem_in_mb> <percentage_memory> <num_threads> <log_level> <percentage_cpu>", argv[0]);
        mem_size = free_ram();
        num_threads = sysconf(_SC_NPROCESSORS_ONLN);
     }
@@ -94,6 +101,7 @@ int main(int argc, char *argv[]) {
       mem_size = (size_t) mem_size*(per_mem/100);
       num_threads = atoi(argv[3]);
       log_lvl = atoi(argv[4]);
+      sleep = atoi(argv[5]);
     }
     log_set_level(log_lvl); 
     log_info("MEMSIZE: %lu", mem_size);
@@ -123,8 +131,11 @@ int main(int argc, char *argv[]) {
     log_set_lock(log_lock, &MUTEX_LOG);
     for (int i = 0; i < num_threads; i++) {
 	args[i].keep_going = 1;
-	args[i].start = 3;
 	args[i].index = i;
+	args[i].sleep = sleep;
+        unsigned int seed = time(NULL);
+        int start = rand_r(&seed);
+	usleep(sleep*1000000);
         pthread_create(&threads[i], NULL, find_primes, (void*)&args[i]);
     }
 

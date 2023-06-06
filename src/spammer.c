@@ -48,7 +48,7 @@ void* find_primes(void* arg) {
       unsigned long end = ULONG_MAX;
       for (unsigned long i = start; i < end; i++) {
 	log_trace("Thread %i: checking %ld", data->index, i);
-        if ( data->index % data->sleep )
+        if ( i % data->sleep )
             usleep(1);
         if (is_prime(i)) {
             log_trace("Thread %i: %ld is prime", data->index, i);
